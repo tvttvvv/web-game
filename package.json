@@ -1,0 +1,16 @@
+{
+  "name": "pixel-commons",
+  "version": "0.1.0",
+  "description": "공개월드 픽셀 협동 샌드박스 (PvE, 게스트 닉네임)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node test/smoke.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": { "node": ">=18" }
+}

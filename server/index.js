@@ -1,0 +1,88 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { WebSocketServer } from 'ws';
+import { World } from './world.js';
+import { Game } from './game.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC = path.join(__dirname, '..', 'public');
+const DATA = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+const PORT = Number(process.env.PORT) || 3000;
+const MAX_PER_IP = 6;
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon', '.json': 'application/json',
+};
+
+const server = http.createServer((req, res) => {
+  let p;
+  try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { p = '/'; }
+  if (p === '/') p = '/index.html';
+  const file = path.normalize(path.join(PUBLIC, p));
+  if (!file.startsWith(PUBLIC + path.sep)) { res.writeHead(403).end(); return; }
+  fs.readFile(file, (err, buf) => {
+    if (err) { res.writeHead(404).end('not found'); return; }
+    res.writeHead(200, {
+      'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
+      'Cache-Control': 'no-cache',
+    });
+    res.end(buf);
+  });
+});
+
+const world = new World(DATA);
+const game = new Game(world);
+
+const wss = new WebSocketServer({ server, maxPayload: 2048, perMessageDeflate: false });
+const ipCount = new Map();
+
+wss.on('connection', (ws, req) => {
+  const ip = req.socket.remoteAddress || '?';
+  const n = (ipCount.get(ip) || 0) + 1;
+  if (n > MAX_PER_IP) { ws.close(4003, 'too many'); return; }
+  ipCount.set(ip, n);
+
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+  ws.on('message', (data) => {
+    let msg;
+    try { msg = JSON.parse(data.toString()); } catch { return; }
+    if (!msg || typeof msg !== 'object') return;
+    if (!ws.player) { if (msg.t === 'join') game.join(ws, msg); return; }
+    game.handle(ws.player, msg);
+  });
+  ws.on('close', () => {
+    ipCount.set(ip, Math.max(0, (ipCount.get(ip) || 1) - 1));
+    if (ws.player) game.remove(ws.player);
+  });
+  ws.on('error', () => {});
+});
+
+setInterval(() => {
+  for (const ws of wss.clients) {
+    if (!ws.isAlive) { ws.terminate(); continue; }
+    ws.isAlive = false;
+    ws.ping();
+  }
+}, 30000);
+
+let last = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  game.tick(dt);
+}, 50);
+
+function save() {
+  game.syncAll();
+  try { world.save(); } catch (e) { console.error('[save] failed', e); }
+}
+setInterval(() => { if (world.dirty) save(); }, 5000);
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { save(); process.exit(0); });
+
+server.listen(PORT, () => console.log(`[server] http://localhost:${PORT}`));
