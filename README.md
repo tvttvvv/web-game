@@ -44,3 +44,13 @@ public/js/main.js     네트워크, UI, 클라이언트 예측
 - 계정 없이 **닉네임 게스트**: 브라우저가 랜덤 토큰을 저장하고 서버는 해시로 진행(인벤토리·킬)을 기억합니다.
 - 월드는 32×32 청크로 무한 생성되며, 플레이어가 바꾼 타일만 저장합니다.
 - PvP 없음: 플레이어끼리 피해를 줄 수 없습니다.
+
+## 배포 (무료)
+
+**A. GitHub Codespaces — 임시 공개 주소**
+저장소 → Code → Codespaces → Create. 열리면 서버가 자동 실행되고, 포트 탭의 3000번 주소(`*.app.github.dev`)가 공개됩니다. 공개가 안 되어 있으면 포트 탭에서 3000번을 우클릭 → Port Visibility → Public.
+
+**B. Render 무료 플랜 — 상시 주소**
+1. https://render.com 가입 → New → **Blueprint** → 이 저장소 선택 (`render.yaml` 자동 인식)
+2. 배포가 끝나면 `https://pixel-commons-xxxx.onrender.com` 주소가 생깁니다.
+- 무료 플랜은 15분간 접속이 없으면 잠들고(첫 접속 시 약 30초 대기), **재시작하면 월드가 초기화**됩니다 (영구 디스크는 유료).

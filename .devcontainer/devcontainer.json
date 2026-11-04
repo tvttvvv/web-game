@@ -1,0 +1,8 @@
+{
+  "name": "pixel-commons",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "forwardPorts": [3000],
+  "portsAttributes": { "3000": { "label": "게임 서버", "onAutoForward": "notify" } },
+  "postCreateCommand": "npm install",
+  "postAttachCommand": "(gh codespace ports visibility 3000:public -c \"$CODESPACE_NAME\" >/dev/null 2>&1 &) ; npm start"
+}
