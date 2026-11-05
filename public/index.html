@@ -19,6 +19,8 @@
 </div>
 <div id="chatlog"></div>
 <div id="topright">
+  <button id="btnName" class="sq" aria-label="닉네임 변경">✏️</button>
+  <button id="btnHelp" class="sq" aria-label="조작법">❓</button>
   <button id="btnChat" class="sq" aria-label="채팅">💬</button>
   <button id="btnFull" class="sq" aria-label="전체화면">⛶</button>
 </div>
@@ -37,21 +39,28 @@
 <div id="banner"></div>
 
 <div id="login">
-  <form id="loginForm" autocomplete="off">
+  <div class="panel">
     <h1>픽셀 커먼스</h1>
-    <p class="sub">모두가 함께 사는 공개월드 · 협동 PvE 샌드박스</p>
-    <label for="nick">닉네임 (게스트)</label>
-    <input id="nick" maxlength="12" placeholder="예: 토끼" required>
-    <button type="submit" id="enter">입장하기</button>
-    <p id="loginMsg" class="msg"></p>
+    <p id="loginMsg" class="msg">월드에 접속 중…</p>
+    <button id="retry" hidden>다시 연결</button>
+  </div>
+</div>
+
+<div id="help" hidden>
+  <div class="panel">
+    <h2>조작법</h2>
     <ul class="tips">
-      <li>왼쪽 아래 조이스틱으로 이동</li>
+      <li>왼쪽 아래 조이스틱으로 이동 (PC: WASD)</li>
       <li>⛏️ 채집 모드: 나무·바위를 터치해서 캐기</li>
       <li>🧱 건축 모드: 땅을 터치해서 블록 놓기 (물 위엔 바닥 → 다리!)</li>
-      <li>🚩 깃발을 세우면 내 땅! 남은 못 건드려요</li>
-      <li>🌙 밤에는 슬라임이 몰려와요 — 벽을 세우고 같이 막아요</li>
+      <li>⚔️ 공격 버튼 또는 몬스터를 터치 (PC: Space)</li>
+      <li>🚩 깃발을 세우면 주변이 내 땅! 남은 못 건드려요</li>
+      <li>🏘️ 마을은 안전지대 — 자원은 마을 밖에 있어요</li>
+      <li>🌙 밤에는 슬라임이 몰려와요. 벽을 세우고 같이 막아요</li>
+      <li>✏️ 버튼으로 닉네임 변경</li>
     </ul>
-  </form>
+    <button id="helpClose">시작하기</button>
+  </div>
 </div>
 <script type="module" src="js/main.js"></script>
 </body>
