@@ -147,6 +147,18 @@ export class Game {
         p.dx = dx; p.dy = dy; p.inputAt = now;
         break;
       }
+      case 'name': {
+        const name = sanitizeName(msg.name);
+        if (!name || name === p.name || now - p.lastChat < 1200) return;
+        p.lastChat = now;
+        const old = p.name;
+        p.name = name;
+        this.syncRecord(p);
+        this.world.dirty = true;
+        this.broadcast({ t: 'pl', id: p.id, name, color: p.color });
+        this.broadcast({ t: 'chat', id: 0, name: '', m: `${old} 님이 ${name}(으)로 이름을 바꿨어요` });
+        break;
+      }
       case 'break': this.doBreak(p, msg, now); break;
       case 'place': this.doPlace(p, msg, now); break;
       case 'atk': this.doAttack(p, now); break;

@@ -106,11 +106,15 @@ function connect() {
     if (e.code === 4000) return showLogin('다른 곳에서 접속했어요. 다시 입장하려면 눌러 주세요.');
     if (e.code === 4002) return showLogin('서버가 가득 찼어요.');
     if (e.code === 4003) return showLogin('이 네트워크에서 접속이 너무 많아요.');
-    showLogin('연결이 끊겼어요. 다시 연결 중…');
+    showLogin('연결이 끊겼어요. 다시 연결 중…', false);
     setTimeout(connect, Math.min(5000, 800 * ++retry));
   };
 }
-function showLogin(msg) { $('login').classList.remove('hide'); $('loginMsg').textContent = msg || ''; }
+function showLogin(msg, canRetry = true) {
+  $('login').classList.remove('hide');
+  $('loginMsg').textContent = msg || '';
+  $('retry').hidden = !canRetry;
+}
 
 function onMsg(m) {
   switch (m.t) {
@@ -121,10 +125,15 @@ function onMsg(m) {
       G.ready = true;
       $('login').classList.add('hide');
       try { localStorage.setItem('pc_name', m.name); } catch {}
+      if (firstVisit) { firstVisit = false; $('help').hidden = false; }
+      toast(`${m.name} 님, 환영해요!`);
       break;
     case 'pl':
       G.names.set(m.id, { name: m.name, color: m.color });
-      if (m.id === G.id) G.myColor = m.color;
+      if (m.id === G.id) {
+        G.myColor = m.color;
+        if (G.name !== m.name) { G.name = m.name; try { localStorage.setItem('pc_name', m.name); } catch {} }
+      }
       break;
     case 'pq': G.names.delete(m.id); G.others.delete(m.id); break;
     case 'c': {
@@ -250,16 +259,23 @@ addEventListener('keydown', (e) => {
   else if (/^Digit[1-4]$/.test(e.code)) { G.sel = Object.keys(BUILD)[+e.code.slice(5) - 1]; setMode('build'); }
 });
 
-// ---------- 로그인 ----------
-try { $('nick').value = localStorage.getItem('pc_name') || ''; } catch {}
-$('loginForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const name = $('nick').value.trim();
-  if (!name) return;
-  wantJoin = name;
-  $('loginMsg').textContent = '접속 중…';
-  if (ws && ws.readyState <= 1) ws.close();
-  connect();
+// ---------- 자동 입장 (닉네임은 저장값 또는 랜덤 게스트) ----------
+const ANIMALS = ['토끼', '여우', '고양이', '펭귄', '곰', '수달', '다람쥐', '부엉이', '사슴', '판다'];
+let savedName = '';
+try { savedName = localStorage.getItem('pc_name') || ''; } catch {}
+wantJoin = savedName || ANIMALS[Math.floor(Math.random() * ANIMALS.length)] + Math.floor(100 + Math.random() * 900);
+connect();
+let firstVisit = !savedName;
+
+$('retry').addEventListener('click', () => {
+  $('retry').hidden = true; $('loginMsg').textContent = '월드에 접속 중…';
+  retry = 0; connect();
+});
+$('btnHelp').addEventListener('click', () => { $('help').hidden = false; });
+$('helpClose').addEventListener('click', () => { $('help').hidden = true; });
+$('btnName').addEventListener('click', () => {
+  const n = prompt('새 닉네임 (최대 12자)', G.name);
+  if (n && n.trim()) send({ t: 'name', name: n.trim() });
 });
 
 // ---------- 메인 루프 ----------
