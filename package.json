@@ -1,16 +1,19 @@
 {
   "name": "pixel-commons",
-  "version": "0.1.0",
-  "description": "공개월드 픽셀 협동 샌드박스 (PvE, 게스트 닉네임)",
+  "version": "3.0.0",
+  "description": "모두가 함께 사는 3D 복셀 공개월드 · 협동 PvE 샌드박스",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node test/smoke.mjs"
+    "test": "node test/core.mjs && node test/smoke.mjs",
+    "vendor": "npm install --no-save three@0.160.1 && cp node_modules/three/build/three.module.min.js public/vendor/"
   },
   "dependencies": {
     "ws": "^8.18.0"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

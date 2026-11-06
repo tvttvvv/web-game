@@ -5,8 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import crypto from 'node:crypto';
 import { loadWorld } from './world.js';
-import { Game } from '../public/js/core/game.js';
-import { bindSocket } from '../public/js/core/world.js';
+import { Game, bindSocket } from '../public/js/core/game.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(__dirname, '..', 'public');
@@ -17,7 +16,7 @@ const MAX_PER_IP = 6;
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon', '.json': 'application/json',
+  '.ico': 'image/x-icon', '.json': 'application/json', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json',
 };
 
 const server = http.createServer((req, res) => {
@@ -38,9 +37,9 @@ const server = http.createServer((req, res) => {
 });
 
 const world = loadWorld(DATA);
-const game = new Game(world, (token) => crypto.createHash('sha256').update(token).digest('hex').slice(0, 16));
+const game = new Game(world, { hash: (token) => crypto.createHash('sha256').update(token).digest('hex').slice(0, 16), log: console.log });
 
-const wss = new WebSocketServer({ server, maxPayload: 2048, perMessageDeflate: false });
+const wss = new WebSocketServer({ server, maxPayload: 16384, perMessageDeflate: false });
 const ipCount = new Map();
 
 wss.on('connection', (ws, req) => {
