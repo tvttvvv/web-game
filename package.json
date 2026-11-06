@@ -1,7 +1,7 @@
 {
-  "name": "pixel-commons",
-  "version": "3.0.0",
-  "description": "모두가 함께 사는 3D 복셀 공개월드 · 협동 PvE 샌드박스",
+  "name": "starlight-party",
+  "version": "4.0.0",
+  "description": "별빛 모험단 — 친구와 함께 하는 3D 협동 액션 RPG (공개 월드 · PvE · 패드/PC)",
   "type": "module",
   "private": true,
   "scripts": {

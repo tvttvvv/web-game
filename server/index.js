@@ -4,12 +4,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import crypto from 'node:crypto';
-import { loadWorld } from './world.js';
 import { Game, bindSocket } from '../public/js/core/game.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(__dirname, '..', 'public');
-const DATA = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const PORT = Number(process.env.PORT) || 3000;
 const MAX_PER_IP = 6;
 
@@ -36,8 +34,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-const world = loadWorld(DATA);
-const game = new Game(world, { hash: (token) => crypto.createHash('sha256').update(token).digest('hex').slice(0, 16), log: console.log });
+const game = new Game({ hash: (token) => crypto.createHash('sha256').update(token).digest('hex').slice(0, 16), log: console.log });
 
 const wss = new WebSocketServer({ server, maxPayload: 16384, perMessageDeflate: false });
 const ipCount = new Map();
@@ -75,11 +72,6 @@ setInterval(() => {
   game.tick(dt);
 }, 50);
 
-function save() {
-  game.syncAll();
-  try { world.save(); } catch (e) { console.error('[save] failed', e); }
-}
-setInterval(() => { if (world.dirty) save(); }, 5000);
-for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { save(); process.exit(0); });
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => process.exit(0));
 
 server.listen(PORT, () => console.log(`[server] http://localhost:${PORT}`));

@@ -1,6 +1,5 @@
 // 네트워크: Node 서버가 있으면 WebSocket, 없으면(GitHub Pages) P2P
-// cb: { open(isHost), message(obj), status(text), lost(text), kicked(code), role(name), mirror()→save|null }
-import { World } from './core/world.js';
+// cb: { open(isHost), message(obj), status(text), lost(text), kicked(code), role(name) }
 import { Game, bindSocket } from './core/game.js';
 import { PROTO } from './shared/constants.js';
 
@@ -42,8 +41,7 @@ function wsNet(cb) {
 
 // ---------------- P2P ----------------
 const SLOTS = 4;
-const hostId = (k) => `pixel-commons-tvttvvv-web-game-v${PROTO}-slot${k}`;
-export const SAVE_KEY = 'pc3_world';
+const hostId = (k) => `starlight-party-tvttvvv-web-game-v${PROTO}-slot${k}`;
 const MAX_GUESTS = 16;
 const PART = 15000;
 const PEER_SCRIPTS = [
@@ -68,13 +66,6 @@ function fnvHex(s) {
     b = Math.imul(b ^ c, 2246822519); b ^= b >>> 15;
   }
   return (a >>> 0).toString(16).padStart(8, '0') + (b >>> 0).toString(16).padStart(8, '0');
-}
-
-export function loadSave() {
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return s && s.v === 3 ? s : null; } catch { return null; }
-}
-export function storeSave(obj) {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(obj)); return true; } catch { return false; }
 }
 
 // 긴 문자열은 조각내서 보냄
@@ -103,13 +94,11 @@ function joiner() {
 function p2pNet(cb) {
   let peer = null, conn = null, host = null, stopped = false, timer = 0, watchdog = 0;
   let sendFn = () => {};
-  let merged = false;
 
   const cleanup = () => {
     clearTimeout(timer); clearInterval(watchdog);
     if (host) {
       for (const t of host.timers) clearInterval(t);
-      host.save();
       for (const c of host.conns) { try { c.close(); } catch {} }
       host = null;
     }
@@ -170,23 +159,14 @@ function p2pNet(cb) {
   }
 
   function becomeHost(p) {
-    // 이번 접속 중 받은 최신 사본 > 이 기기에 저장된 월드
-    const mirror = cb.mirror && cb.mirror();
-    const saved = loadSave();
-    const base = mirror && (!saved || (mirror.ts || 0) >= (saved.ts || 0) - 60000) ? mirror : saved;
-    const world = new World(base);
-    const game = new Game(world, { hash: fnvHex, p2p: true, log: (s) => console.log(s) });
+    const game = new Game({ hash: fnvHex, p2p: true, log: (s) => console.log(s) });
     let last = performance.now();
-    const h = host = {
-      world, game, conns: new Set(), timers: [],
-      save() { game.syncAll(); storeSave(world.serialize()); world.dirty = false; },
-    };
+    const h = host = { game, conns: new Set(), timers: [] };
     h.timers.push(setInterval(() => {
       const now = performance.now();
       try { game.tick(Math.min(0.1, (now - last) / 1000)); } catch (e) { console.error(e); }
       last = now;
     }, 50));
-    h.timers.push(setInterval(() => { if (world.dirty) h.save(); }, 8000));
 
     p.on('connection', (c) => {
       c.on('open', () => {
@@ -236,11 +216,6 @@ function p2pNet(cb) {
       if (!s) return;
       let m; try { m = JSON.parse(s); } catch { return; }
       if (m.t === 'kick') { stopped = true; cleanup(); cb.kicked(m.code); return; }
-      if (m.t === 'welcome' && !merged) {
-        merged = true;
-        const save = loadSave();
-        if (save && save.mods && Object.keys(save.mods).length) setTimeout(() => sendFn({ t: 'merge', save }), 1500);
-      }
       cb.message(m);
     });
     c.on('close', lostHost);
@@ -248,7 +223,7 @@ function p2pNet(cb) {
     cb.open(false);
   }
 
-  addEventListener('pagehide', () => { if (host) host.save(); if (peer) try { peer.destroy(); } catch {} });
+  addEventListener('pagehide', () => { if (peer) try { peer.destroy(); } catch {} });
   start();
   return {
     send(o) { sendFn(o); },
