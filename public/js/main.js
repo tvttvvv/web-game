@@ -125,7 +125,7 @@ function applySetting(k) {
   ents.showNames = settings.names;
   input.mouseSens = settings.sens; input.touchSens = settings.sens; input.invertY = settings.invert;
 }
-ui.bindSettings(settings, applySetting);
+ui.bindSettings(settings, (k) => { settings.manual = true; applySetting(k); });
 for (const k of ['res', 'vol', 'bright']) applySetting(k);
 R.setRenderDistance(settings.dist);
 
@@ -583,7 +583,7 @@ addEventListener('keydown', () => sound.unlock(), { capture: true });
 
 // ---------- 매 프레임 ----------
 let last = performance.now();
-let acc = { pos: 0, station: 0, ui: 0, signs: 0, save: 0, idle: 0 };
+let acc = { pos: 0, station: 0, ui: 0, signs: 0, save: 0, idle: 0, perf: 0 };
 let fps = 0, fpsN = 0, fpsT = 0;
 const camEuler = new THREE.Euler(0, 0, 0, 'YXZ');
 
@@ -733,6 +733,17 @@ function frame(now) {
       const r = R.gl.info.render;
       ui.setDebug(`${fps} fps  ${r.calls} draw  ${(r.triangles / 1000).toFixed(0)}k tri\nXYZ ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}\n바이옴 ${BIOME_NAMES[c.biome]}  청크 ${prog.loaded}/${prog.total}\n메시 평균 ${(S.world.meshMs / Math.max(1, S.world.meshCount)).toFixed(1)}ms  몹 ${ents.mobs.size}`);
     } else ui.setDebug('');
+  }
+  // 기기가 버거워하면 화질 자동 조절 (설정을 직접 바꾼 적이 없을 때만)
+  acc.perf += dt;
+  if (acc.perf >= 5 && S.ready && !ui.anyOpen && !document.hidden) {
+    acc.perf = 0;
+    if (!settings.manual && fps > 0 && fps < 22) {
+      if (settings.dist > 3) { settings.dist--; applySetting('dist'); }
+      else if (settings.res > 0.6) { settings.res = Math.max(0.6, +(settings.res - 0.15).toFixed(2)); applySetting('res'); }
+      else acc.perf = -1e9;
+      if (acc.perf >= 0) ui.toast('기기에 맞춰 화질을 조절했어요 (⚙️ 설정에서 바꿀 수 있어요)', 2500);
+    }
   }
   // P2P 손님: 월드 사본을 이 기기에도 저장 (모두 나가도 이어갈 수 있게)
   acc.save += dt;

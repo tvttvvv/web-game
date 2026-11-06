@@ -253,13 +253,15 @@ export class UI {
   }
 
   // ---------- 메뉴 ----------
-  openMenu() { $('menu').hidden = false; this.renderGoals(); }
+  openMenu() { $('menu').hidden = false; this.renderGoals(); for (const f of this._refresh || []) f(); }
   closeMenu() { $('menu').hidden = true; }
   bindSettings(settings, apply) {
+    this._refresh = [];
     const bindRange = (id, key, fmt) => {
       const el = $('s-' + id), lab = $('v-' + id);
       el.value = settings[key];
       lab.textContent = fmt(settings[key]);
+      this._refresh.push(() => { el.value = settings[key]; lab.textContent = fmt(settings[key]); });
       el.addEventListener('input', () => { settings[key] = +el.value; lab.textContent = fmt(settings[key]); apply(key); });
     };
     bindRange('dist', 'dist', (v) => `${v}청크`);
