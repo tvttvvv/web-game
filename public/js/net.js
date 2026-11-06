@@ -4,6 +4,7 @@ import { Game, bindSocket } from './core/game.js';
 import { PROTO } from './shared/constants.js';
 
 export async function detectMode() {
+  if (/\.github\.io$/.test(location.hostname)) return 'p2p'; // GitHub Pages에는 서버가 없음
   try {
     const r = await fetch('__pc_server', { cache: 'no-store' });
     if (r.ok && (await r.text()) === 'ok') return 'server';
@@ -41,7 +42,9 @@ function wsNet(cb) {
 
 // ---------------- P2P ----------------
 const SLOTS = 4;
-const hostId = (k) => `starlight-party-tvttvvv-web-game-v${PROTO}-slot${k}`;
+// ?room=이름 을 붙이면 친구끼리만 쓰는 따로 된 월드
+export const ROOM = (new URLSearchParams(location.search).get('room') || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
+const hostId = (k) => `starlight-party-tvttvvv-web-game-v${PROTO}${ROOM ? '-r-' + ROOM : ''}-slot${k}`;
 const MAX_GUESTS = 16;
 const PART = 15000;
 const PEER_SCRIPTS = [
@@ -144,7 +147,7 @@ function p2pNet(cb) {
   function tryHost(slot) {
     if (stopped) return;
     const p = peer = new window.Peer(hostId(slot), { debug: 0 });
-    p.on('open', () => { if (peer === p) becomeHost(p); });
+    p.on('open', () => { if (peer === p) becomeHost(p, slot); });
     p.on('disconnected', () => { if (peer === p && host) setTimeout(() => { if (peer === p && !p.destroyed) p.reconnect(); }, 1000); });
     p.on('error', (e) => {
       if (peer !== p) return;
@@ -158,10 +161,12 @@ function p2pNet(cb) {
     });
   }
 
-  function becomeHost(p) {
+  function becomeHost(p, slot) {
     const game = new Game({ hash: fnvHex, p2p: true, log: (s) => console.log(s) });
     let last = performance.now();
-    const h = host = { game, conns: new Set(), timers: [] };
+    const h = host = { game, conns: new Set(), timers: [], slot, merging: false };
+    // 다른 칸에도 호스트가 있으면(예: 잠들었던 호스트가 깨어남) 사람이 적은 쪽이 많은 쪽으로 합침
+    h.timers.push(setInterval(() => probeOthers(p, h), 12000 + Math.random() * 5000));
     h.timers.push(setInterval(() => {
       const now = performance.now();
       try { game.tick(Math.min(0.1, (now - last) / 1000)); } catch (e) { console.error(e); }
@@ -181,7 +186,12 @@ function p2pNet(cb) {
         h.conns.add(c);
         const sock = bindSocket(game, ws);
         const join = joiner();
-        c.on('data', (d) => { const s = join(String(d)); if (s) sock.receive(s); });
+        c.on('data', (d) => {
+          const s = join(String(d));
+          if (!s) return;
+          if (s === '{"t":"_info?"}') { try { c.send(JSON.stringify({ t: '_info', n: game.players.size })); } catch {} return; }
+          sock.receive(s);
+        });
         c.on('close', () => { h.conns.delete(c); sock.closed(); });
         c.on('error', () => {});
       });
@@ -197,6 +207,31 @@ function p2pNet(cb) {
     sendFn = (o) => lsock.receive(o);
     cb.role('host');
     cb.open(true);
+  }
+
+  function probeOthers(p, h) {
+    if (host !== h || h.merging || p.destroyed || p.disconnected) return;
+    for (let k = 0; k < SLOTS; k++) {
+      if (k === h.slot) continue;
+      let c;
+      try { c = p.connect(hostId(k), { reliable: true, serialization: 'raw' }); } catch { continue; }
+      if (!c) continue;
+      const done = () => { clearTimeout(t); try { c.close(); } catch {} };
+      const t = setTimeout(done, 6000);
+      c.on('open', () => { try { c.send('{"t":"_info?"}'); } catch { done(); } });
+      c.on('data', (d) => {
+        let m; try { m = JSON.parse(String(d)); } catch { return; }
+        if (m.t !== '_info') return;
+        done();
+        const mine = h.game.players.size;
+        if (host !== h || h.merging || !(m.n > mine || (m.n === mine && k < h.slot))) return;
+        h.merging = true;
+        for (const g of h.conns) { try { g.send(JSON.stringify({ t: '_moved' })); } catch {} }
+        cb.lost('다른 모험가들의 월드로 옮기는 중…');
+        setTimeout(() => retryLater(400 + Math.random() * 600), 400);
+      });
+      c.on('error', done);
+    }
   }
 
   function guest(c) {
@@ -216,6 +251,7 @@ function p2pNet(cb) {
       if (!s) return;
       let m; try { m = JSON.parse(s); } catch { return; }
       if (m.t === 'kick') { stopped = true; cleanup(); cb.kicked(m.code); return; }
+      if (m.t === '_moved') { if (conn === c && !stopped) { cb.lost('다른 모험가들의 월드로 옮기는 중…'); retryLater(200 + Math.random() * 600); } return; }
       cb.message(m);
     });
     c.on('close', lostHost);

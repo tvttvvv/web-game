@@ -5,7 +5,7 @@ import { FX } from './client/fx.js';
 import { Input } from './client/input.js';
 import { UI } from './client/ui.js';
 import { Sound } from './client/audio.js';
-import { detectMode, createNet } from './net.js';
+import { detectMode, createNet, ROOM } from './net.js';
 import { PROTO, PLAYER_R, INTERACT_R, WORLD_R, clamp, dist, dirOf, ryTo, angleDiff } from './shared/constants.js';
 import { CLASSES, SKILLS, DODGE, MONSTERS, STACK, NPCS, GEAR, RARITY, POTION_CD, QUEST_BY_ID } from './shared/data.js';
 import { deriveStats, countStack, itemName } from './shared/rules.js';
@@ -149,7 +149,7 @@ async function startNet() {
   window.__pc.net = net;
 }
 function renderRole() {
-  $('role').textContent = { server: '서버에 접속 중', host: '내 기기가 월드를 열고 있어요 (호스트) — 창을 닫으면 다른 사람이 이어받아요', guest: '다른 모험가의 월드에 접속 중 (P2P)' }[S.role] || '';
+  $('role').textContent = ({ server: '서버에 접속 중', host: '내 기기가 월드를 열고 있어요 (호스트) — 창을 닫으면 다른 사람이 이어받아요', guest: '다른 모험가의 월드에 접속 중 (P2P)' }[S.role] || '') + (ROOM ? ` · 비밀 방: ${ROOM}` : '');
 }
 
 // ---------- 메시지 ----------
