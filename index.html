@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#14202e">
+<title>픽셀 커먼스</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="hp"></div>
+  <div id="inv"><span id="wood">🪵 0</span><span id="stone">🪨 0</span><span id="kills">💀 0</span></div>
+  <div id="info"><span id="clock">☀️</span><span id="online">👥 1</span><span id="zone"></span><span id="role"></span></div>
+</div>
+<div id="chatlog"></div>
+<div id="topright">
+  <button id="btnName" class="sq" aria-label="닉네임 변경">✏️</button>
+  <button id="btnHelp" class="sq" aria-label="조작법">❓</button>
+  <button id="btnChat" class="sq" aria-label="채팅">💬</button>
+  <button id="btnFull" class="sq" aria-label="전체화면">⛶</button>
+</div>
+<form id="chatForm" autocomplete="off" hidden>
+  <input id="chatInput" maxlength="60" placeholder="메시지 (최대 60자)">
+  <button type="submit">전송</button>
+</form>
+
+<div id="joy"><div id="knob"></div></div>
+<div id="palette" hidden></div>
+<div id="actions">
+  <button id="btnMode" class="big">⛏️<small>채집</small></button>
+  <button id="btnAtk" class="big atk">⚔️<small>공격</small></button>
+</div>
+<div id="toast"></div>
+<div id="banner"></div>
+
+<div id="login">
+  <div class="panel">
+    <h1>픽셀 커먼스</h1>
+    <p id="loginMsg" class="msg">월드에 접속 중…</p>
+    <button id="retry" hidden>다시 연결</button>
+  </div>
+</div>
+
+<div id="help" hidden>
+  <div class="panel">
+    <h2>조작법</h2>
+    <ul class="tips">
+      <li>왼쪽 아래 조이스틱으로 이동 (PC: WASD)</li>
+      <li>⛏️ 채집 모드: 나무·바위를 터치해서 캐기</li>
+      <li>🧱 건축 모드: 땅을 터치해서 블록 놓기 (물 위엔 바닥 → 다리!)</li>
+      <li>⚔️ 공격 버튼 또는 몬스터를 터치 (PC: Space)</li>
+      <li>🚩 깃발을 세우면 주변이 내 땅! 남은 못 건드려요</li>
+      <li>🏘️ 마을은 안전지대 — 자원은 마을 밖에 있어요</li>
+      <li>🌙 밤에는 슬라임이 몰려와요. 벽을 세우고 같이 막아요</li>
+      <li>✏️ 버튼으로 닉네임 변경</li>
+    </ul>
+    <button id="helpClose">시작하기</button>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
