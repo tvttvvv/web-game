@@ -11,6 +11,8 @@ html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color
 #hp { color:#ff5d6c; letter-spacing:1px; font-size:16px; }
 #inv span, #info span { margin-right:12px; } #inv span:last-child, #info span:last-child { margin-right:0; }
 #zone { color:var(--accent); }
+#role { color:#9fe39f; }
+#info span:empty { display:none; }
 #chatlog { position:fixed; left:max(12px, env(safe-area-inset-left)); top:120px; width:min(360px, 46vw);
   font-size:13px; pointer-events:none; display:flex; flex-direction:column; gap:3px; }
 #chatlog div { background:rgba(0,0,0,.45); border-radius:6px; padding:3px 8px; word-break:break-all; transition:opacity .6s; }

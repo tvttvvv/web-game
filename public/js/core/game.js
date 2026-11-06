@@ -1,8 +1,7 @@
-import crypto from 'node:crypto';
 import {
   CHUNK, T, isSolidTile, SPEED, PLAYER_R, MOB_R, REACH, SAFE_R, CLAIM_R,
   MAX_HP, MAX_FLAGS, BUILD, DROPS, DAY_LEN, mobTime, inSafe, moveEntity,
-} from '../public/js/shared.js';
+} from '../shared.js';
 
 const MAX_PLAYERS = 100;
 const MAX_MOBS = 120;
@@ -15,8 +14,10 @@ function sanitizeName(s) {
 }
 
 export class Game {
-  constructor(world) {
+  // hash: 토큰 -> 플레이어 ID(16자리 hex) 함수 (서버는 sha256, 브라우저 호스트는 FNV)
+  constructor(world, hash) {
     this.world = world;
+    this.hash = hash;
     this.players = new Map(); // id -> player
     this.byPid = new Map();
     this.mobs = new Map();
@@ -38,7 +39,7 @@ export class Game {
   join(ws, msg) {
     const token = typeof msg.token === 'string' ? msg.token : '';
     if (token.length < 16 || token.length > 80) return ws.close(4001, 'bad token');
-    const pid = crypto.createHash('sha256').update(token).digest('hex').slice(0, 16);
+    const pid = this.hash(token);
 
     const old = this.byPid.get(pid);
     if (old) { old.ws.close(4000, 'duplicate'); this.remove(old); }

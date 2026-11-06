@@ -4,6 +4,7 @@ import {
 } from './shared.js';
 import { Renderer } from './render.js';
 import { setupInput } from './input.js';
+import { detectMode, createNet } from './net.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('game');
@@ -87,7 +88,7 @@ function setMode(m) {
 buildPalette(); setMode('mine');
 
 // ---------- 네트워크 ----------
-let ws = null, wantJoin = null, retry = 0;
+let wantJoin = null;
 const token = (() => {
   try {
     let t = localStorage.getItem('pc_token');
@@ -95,20 +96,27 @@ const token = (() => {
     return t;
   } catch { return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + Date.now(); }
 })();
-const send = (o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
-
-function connect() {
-  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
-  ws.onopen = () => { retry = 0; send({ t: 'join', name: wantJoin, token }); };
-  ws.onmessage = (e) => onMsg(JSON.parse(e.data));
-  ws.onclose = (e) => {
-    G.ready = false;
-    if (e.code === 4000) return showLogin('다른 곳에서 접속했어요. 다시 입장하려면 눌러 주세요.');
-    if (e.code === 4002) return showLogin('서버가 가득 찼어요.');
-    if (e.code === 4003) return showLogin('이 네트워크에서 접속이 너무 많아요.');
-    showLogin('연결이 끊겼어요. 다시 연결 중…', false);
-    setTimeout(connect, Math.min(5000, 800 * ++retry));
-  };
+let net = null;
+const send = (o) => { if (net) net.send(o); };
+const KICK = {
+  4000: '다른 창에서 접속했어요. 이 창에서 하려면 다시 연결을 눌러 주세요.',
+  4002: '월드가 가득 찼어요.',
+  4003: '이 네트워크에서 접속이 너무 많아요.',
+};
+async function startNet() {
+  const mode = await detectMode();
+  net = createNet(mode, {
+    open: () => send({ t: 'join', name: wantJoin, token }),
+    message: onMsg,
+    status: (t) => { if (!G.ready) showLogin(t, false); },
+    lost: (t) => { G.ready = false; showLogin(t, false); },
+    kicked: (code) => { G.ready = false; showLogin(KICK[code] || '연결이 종료됐어요.'); },
+    role: (r) => {
+      G.role = r;
+      $('role').textContent = r === 'host' ? '🏠 호스트' : '';
+      if (r === 'host') setTimeout(() => toast('지금은 내 기기가 월드를 열고 있어요'), 1800);
+    },
+  });
 }
 function showLogin(msg, canRetry = true) {
   $('login').classList.remove('hide');
@@ -264,12 +272,12 @@ const ANIMALS = ['토끼', '여우', '고양이', '펭귄', '곰', '수달', '�
 let savedName = '';
 try { savedName = localStorage.getItem('pc_name') || ''; } catch {}
 wantJoin = savedName || ANIMALS[Math.floor(Math.random() * ANIMALS.length)] + Math.floor(100 + Math.random() * 900);
-connect();
 let firstVisit = !savedName;
+startNet();
 
 $('retry').addEventListener('click', () => {
   $('retry').hidden = true; $('loginMsg').textContent = '월드에 접속 중…';
-  retry = 0; connect();
+  if (net) net.restart();
 });
 $('btnHelp').addEventListener('click', () => { $('help').hidden = false; });
 $('helpClose').addEventListener('click', () => { $('help').hidden = true; });

@@ -3,8 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { World } from './world.js';
-import { Game } from './game.js';
+import crypto from 'node:crypto';
+import { loadWorld } from './world.js';
+import { Game } from '../public/js/core/game.js';
+import { bindSocket } from '../public/js/core/world.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(__dirname, '..', 'public');
@@ -21,6 +23,7 @@ const MIME = {
 const server = http.createServer((req, res) => {
   let p;
   try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { p = '/'; }
+  if (p === '/__pc_server') { res.writeHead(200, { 'Content-Type': 'text/plain' }).end('ok'); return; }
   if (p === '/') p = '/index.html';
   const file = path.normalize(path.join(PUBLIC, p));
   if (!file.startsWith(PUBLIC + path.sep)) { res.writeHead(403).end(); return; }
@@ -34,8 +37,8 @@ const server = http.createServer((req, res) => {
   });
 });
 
-const world = new World(DATA);
-const game = new Game(world);
+const world = loadWorld(DATA);
+const game = new Game(world, (token) => crypto.createHash('sha256').update(token).digest('hex').slice(0, 16));
 
 const wss = new WebSocketServer({ server, maxPayload: 2048, perMessageDeflate: false });
 const ipCount = new Map();
@@ -48,16 +51,11 @@ wss.on('connection', (ws, req) => {
 
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
-  ws.on('message', (data) => {
-    let msg;
-    try { msg = JSON.parse(data.toString()); } catch { return; }
-    if (!msg || typeof msg !== 'object') return;
-    if (!ws.player) { if (msg.t === 'join') game.join(ws, msg); return; }
-    game.handle(ws.player, msg);
-  });
+  const sock = bindSocket(game, ws);
+  ws.on('message', (data) => sock.receive(data.toString()));
   ws.on('close', () => {
     ipCount.set(ip, Math.max(0, (ipCount.get(ip) || 1) - 1));
-    if (ws.player) game.remove(ws.player);
+    sock.closed();
   });
   ws.on('error', () => {});
 });

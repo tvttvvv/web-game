@@ -34,9 +34,11 @@ npm test           # 서버 스모크 테스트
 ## 구조
 
 ```
-server/index.js   HTTP 정적 서빙 + WebSocket
-server/world.js   시드 기반 청크 지형 생성, 변경분 저장
-server/game.js    서버 권위 시뮬레이션 (이동/채집/건축/몬스터/영역)
+server/index.js        HTTP 정적 서빙 + WebSocket (서버 모드)
+server/world.js        월드 파일 저장/불러오기
+public/js/core/world.js  시드 기반 청크 지형 생성 (서버·브라우저 공용)
+public/js/core/game.js   권위 시뮬레이션: 이동/채집/건축/몬스터/영역 (서버·P2P 호스트 공용)
+public/js/net.js       서버(WebSocket) / P2P(PeerJS) 연결
 public/js/shared.js   서버·클라 공용 상수와 이동·충돌 로직
 public/js/render.js   절차적 픽셀아트 + 캔버스 렌더링
 public/js/main.js     네트워크, UI, 클라이언트 예측
@@ -48,6 +50,13 @@ public/js/main.js     네트워크, UI, 클라이언트 예측
 - PvP 없음: 플레이어끼리 피해를 줄 수 없습니다.
 
 ## 배포 (무료)
+
+**0. GitHub Pages — 서버 없이 바로 (`https://tvttvvv.github.io/web-game/`)**
+`gh-pages` 브랜치에 `public/` 폴더 내용을 올리면 됩니다. Node 서버가 없으면 게임이 자동으로 **P2P 모드**가 됩니다.
+- 처음 들어온 사람의 브라우저가 월드를 돌리는 **호스트**가 되고(🏠 표시), 나머지는 그 브라우저에 접속합니다 (연결 중개: PeerJS 무료 서버).
+- 호스트가 나가면 남은 사람 중 한 명이 마지막 월드 사본으로 이어받습니다. 호스트가 갑자기 꺼지면 이어받기까지 최대 1분 정도 걸릴 수 있어요.
+- 월드는 호스트 기기의 브라우저 저장소에 저장되며, 모두가 나가면 마지막 호스트 기기에 남습니다.
+- 일부 모바일 데이터망/회사망에서는 P2P 연결이 막힐 수 있습니다.
 
 **A. GitHub Codespaces — 임시 공개 주소**
 저장소 → Code → Codespaces → Create. 열리면 서버가 자동 실행되고, 포트 탭의 3000번 주소(`*.app.github.dev`)가 공개됩니다. 공개가 안 되어 있으면 포트 탭에서 3000번을 우클릭 → Port Visibility → Public.
