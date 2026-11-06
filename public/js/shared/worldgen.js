@@ -292,6 +292,6 @@ export function createGenerator(seed) {
 export function defaultSigns(plazaY) {
   return {
     [`0,${plazaY + 1},-3`]: '픽셀 커먼스\n모두의 공개월드\n협동 샌드박스\n밤엔 몬스터 조심!',
-    [`0,${plazaY + 1},3`]: '도움말: ❓ 버튼\n/spawn 광장으로\n/home 내 침대로\n상자는 공용이에요',
+    [`0,${plazaY + 1},3`]: '도움말: ⚙️ 메뉴\n/spawn 광장으로\n/home 내 침대로\n상자는 공용이에요',
   };
 }

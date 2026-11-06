@@ -13,7 +13,7 @@ export class World {
     this.players = (ok && saved.players) || {};
     this.claims = (ok && saved.claims) || [];
     this.containers = (ok && saved.containers) || {};
-    this.signs = Object.assign(defaultSigns(this.gen.plazaY), (ok && saved.signs) || {});
+    this.signs = Object.assign({}, (ok && saved.signs) || {}, defaultSigns(this.gen.plazaY)); // 스폰 표지판은 항상 최신 문구
     this.crops = (ok && saved.crops) || {};
     this.saplings = (ok && saved.saplings) || {};
     this.chunks = new Map();

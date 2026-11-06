@@ -447,7 +447,7 @@ export class Hand {
     const m = this.items.make(id);
     if (!m) return;
     if (m.userData.block) { m.scale.setScalar(0.26); m.rotation.set(0.15, 0.7, 0); }
-    else { m.scale.setScalar(0.42); m.rotation.set(0, -Math.PI / 2.6, 0.2); }
+    else { m.scale.setScalar(0.36); m.rotation.set(0, -Math.PI / 2.6, 0.2); }
     this.itemMesh = m;
     this.group.add(m);
   }

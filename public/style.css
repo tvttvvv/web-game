@@ -148,12 +148,18 @@ button.primary { background: #d9962b; border-color: #ffd36b; color: #1d1405; fon
 #load-bar { height: 100%; width: 0; background: linear-gradient(90deg, #7be08a, #ffd36b); transition: width .2s; }
 .tip { font-size: 13px; opacity: .7; margin-top: 16px; }
 
-@media (max-width: 860px) {
+@media (max-width: 700px) {
   .inv-panel { grid-template-columns: 1fr; }
   #recipes { max-height: 34vh; }
   :root { --slot: min(10vw, 48px); }
 }
+@media (max-width: 960px) and (min-width: 701px) {
+  .inv-panel { grid-template-columns: minmax(260px, 1fr) auto; gap: 10px; padding: 10px; }
+  .rec .btns button { padding: 5px 7px; }
+}
 @media (max-height: 520px) {
-  :root { --slot: min(8vw, 44px); }
-  #recipes { max-height: 70vh; }
+  :root { --slot: min(5.2vw, 40px); }
+  #recipes { max-height: 72vh; }
+  .rec { grid-template-columns: 34px 1fr auto; padding: 4px; }
+  .rec > img { width: 32px; height: 32px; }
 }
