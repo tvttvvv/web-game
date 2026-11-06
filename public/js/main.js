@@ -67,7 +67,15 @@ const input = new Input(canvas, {
 });
 for (const ev of ['pointerdown', 'keydown', 'touchend']) addEventListener(ev, () => sound.unlock(), { capture: true, passive: true });
 
-function resize() { R.resize(innerWidth, innerHeight, Math.min(devicePixelRatio || 1, 2) * settings.res); }
+// 휴대폰처럼 작은 화면에서는 퀘스트 안내를 왼쪽으로 옮김
+function layout() {
+  const small = innerHeight < 560 || innerWidth < 600;
+  document.body.classList.toggle('small', small);
+  const tr = $('tracker');
+  if (small) { if (tr.parentNode !== $('hud-tl')) $('hud-tl').insertBefore(tr, $('buffs')); }
+  else if (tr.parentNode !== $('hud-tr')) $('hud-tr').insertBefore(tr, $('feed'));
+}
+function resize() { layout(); R.resize(innerWidth, innerHeight, Math.min(devicePixelRatio || 1, 2) * settings.res); }
 addEventListener('resize', resize);
 addEventListener('orientationchange', () => setTimeout(resize, 200));
 function applySetting(k) {
@@ -238,6 +246,7 @@ function onWelcome(m) {
     S.joined = true; S.loading = true; S.loadT = performance.now();
     ui.loading('섬을 그리는 중…', 0);
     setTimeout(() => ui.toast(touch ? '왼쪽 아래를 끌어 이동 · ⚔️ 공격 · 몬스터를 누르면 자동으로 싸워요' : 'WASD 이동 · Space 공격 · 1~4 스킬 · Shift 구르기 · F 대화 · I 가방 · M 지도', 6000), 1500);
+    if (touch && innerWidth < innerHeight && innerWidth < 600) setTimeout(() => ui.toast('📱 화면을 가로로 돌리면 더 넓게 볼 수 있어요', 4000), 8000);
   }
 }
 
